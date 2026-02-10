@@ -124,7 +124,7 @@ public class User {
             this.verificationStatus = VerificationStatus.PENDING;
         } else {
             this.approved = true; // ADMIN & DRIVER
-            this.verificationStatus = VerificationStatus.APPROVED;
+            this.verificationStatus = VerificationStatus.VERIFIED;
         }
     }
 

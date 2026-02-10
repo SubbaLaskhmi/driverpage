@@ -13,6 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import ProviderNotificationBell from '../../components/provider/ProviderNotificationBell';
 
 const { width } = Dimensions.get('window');
 const API = 'http://localhost:8080';
@@ -25,6 +26,12 @@ interface ParkingSlot {
   hours: number;
 }
 
+interface Summary {
+  totalRevenue: number;
+  occupancyRate: number;
+  weeklyGrowth: number;
+}
+
 export default function ProviderDashboardScreen() {
   const router = useRouter();
 
@@ -34,9 +41,9 @@ export default function ProviderDashboardScreen() {
       : null;
 
   const [approved, setApproved] = useState<boolean | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [slots, setSlots] = useState<ParkingSlot[]>([]);
-  const [summary, setSummary] = useState({
+  const [summary, setSummary] = useState<Summary>({
     totalRevenue: 0,
     occupancyRate: 0,
     weeklyGrowth: 0,
@@ -58,9 +65,17 @@ export default function ProviderDashboardScreen() {
         }
 
         const data = await res.json();
+
         setApproved(true);
-        setSummary(data.summary);
-        setIsOnline(data.online);
+
+        // ✅ SAFE SUMMARY ASSIGNMENT (NO MORE CRASH)
+        setSummary({
+          totalRevenue: data?.summary?.totalRevenue ?? 0,
+          occupancyRate: data?.summary?.occupancyRate ?? 0,
+          weeklyGrowth: data?.summary?.weeklyGrowth ?? 0,
+        });
+
+        setIsOnline(data?.online ?? true);
       } catch (err) {
         console.error(err);
         Alert.alert('Error', 'Failed to load dashboard');
@@ -68,11 +83,16 @@ export default function ProviderDashboardScreen() {
     };
 
     const loadSlots = async () => {
-      const res = await fetch(`${API}/api/provider/slots`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setSlots(data);
+      try {
+        const res = await fetch(`${API}/api/provider/slots`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        setSlots(Array.isArray(data) ? data : []);
+      } catch {
+        setSlots([]);
+      }
     };
 
     loadDashboard();
@@ -143,12 +163,16 @@ export default function ProviderDashboardScreen() {
             My Parking Lot
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-white/20 p-2 rounded-xl"
-        >
-          <Ionicons name="power" size={20} color="white" />
-        </TouchableOpacity>
+
+        <View className="flex-row items-center gap-4">
+          <ProviderNotificationBell />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="bg-white/20 p-2 rounded-xl"
+          >
+            <Ionicons name="power" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View className="bg-white rounded-3xl p-6 flex-row justify-between items-center -mb-20">
@@ -189,12 +213,24 @@ export default function ProviderDashboardScreen() {
       className={`bg-white rounded-2xl p-4 mb-4 border ${index % 2 === 0 ? 'mr-4' : ''}`}
     >
       <View className="flex-row justify-between items-center mb-4">
-        <View className={`w-10 h-10 rounded-xl justify-center items-center ${item.isOccupied ? 'bg-red-50' : 'bg-green-50'}`}>
-          <Text className={`font-black text-sm ${item.isOccupied ? 'text-red-500' : 'text-green-500'}`}>
+        <View
+          className={`w-10 h-10 rounded-xl justify-center items-center ${
+            item.isOccupied ? 'bg-red-50' : 'bg-green-50'
+          }`}
+        >
+          <Text
+            className={`font-black text-sm ${
+              item.isOccupied ? 'text-red-500' : 'text-green-500'
+            }`}
+          >
             {item.code}
           </Text>
         </View>
-        <View className={`w-2 h-2 rounded-full ${item.isOccupied ? 'bg-red-500' : 'bg-green-500'}`} />
+        <View
+          className={`w-2 h-2 rounded-full ${
+            item.isOccupied ? 'bg-red-500' : 'bg-green-500'
+          }`}
+        />
       </View>
 
       <Text className="text-gray-400 text-[10px] font-bold uppercase mb-1">

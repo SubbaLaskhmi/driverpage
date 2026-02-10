@@ -21,25 +21,36 @@ public class SecurityConfig {
 
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})   // ✅ ENABLE CORS (VERY IMPORTANT)
+            .cors(cors -> {})
 
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
             .authorizeHttpRequests(auth -> auth
-                // ✅ PUBLIC
-                .requestMatchers(
-                    "/api/auth/**",
-                    "/api/test/public"
-                ).permitAll()
 
-                // 🔐 ROLE BASED
+                // 🔓 AUTH
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // 🔐 ADMIN
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/provider/**").hasAuthority("ROLE_PROVIDER")
+
+                // 🔐 PROVIDER (LOGIN ALLOWED EVEN IF NOT APPROVED)
+                .requestMatchers(
+                        "/api/provider/verification/**",   // upload docs
+                        "/api/provider/notifications/**",  // notifications
+                        "/api/provider/profile/**"         // profile view
+                ).hasAuthority("ROLE_PROVIDER")
+
+                // 🚫 PROVIDER FEATURES (approval enforced in SERVICE layer)
+                .requestMatchers(
+                        "/api/provider/slots/**",
+                        "/api/provider/bookings/**"
+                ).hasAuthority("ROLE_PROVIDER")
+
+                // 🔐 DRIVER
                 .requestMatchers("/api/driver/**").hasAuthority("ROLE_DRIVER")
 
-                // 🔒 EVERYTHING ELSE
                 .anyRequest().authenticated()
             )
 

@@ -14,6 +14,12 @@ interface Provider {
   email: string;
   phone: string;
   status: 'pending' | 'approved' | 'suspended';
+  verification?: {
+    businessName: string;
+    licenseNumber: string;
+    documentUrl: string;
+    status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  };
 }
 
 const API = 'http://localhost:8080';
@@ -31,14 +37,10 @@ export default function ProvidersScreen() {
   const loadProviders = async () => {
     try {
       const res = await fetch(`${API}/api/admin/providers`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to load providers');
-      }
+      if (!res.ok) throw new Error('Failed to load providers');
 
       const data = await res.json();
       setProviders(data);
@@ -55,54 +57,41 @@ export default function ProvidersScreen() {
   }, []);
 
   /* ================= ACTION HANDLER ================= */
-  const action = (id: number, type: string) => {
-    const actionLabel =
-      type === 'approve'
-        ? 'Approve'
-        : type === 'reject'
-        ? 'Reject'
-        : type === 'suspend'
-        ? 'Suspend'
-        : 'Reactivate';
+  const handleAction = async (
+    providerId: number,
+    action: 'approve' | 'reject' | 'suspend' | 'reactivate'
+  ) => {
+    const remark =
+      typeof window !== 'undefined'
+        ? window.prompt(`Enter remark for ${action.toUpperCase()}`)
+        : null;
 
-    Alert.alert(
-      `${actionLabel} Provider`,
-      `Are you sure you want to ${actionLabel.toLowerCase()} this provider?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
+    if (remark === null || remark.trim().length < 3) {
+      Alert.alert('Remark required', 'Please enter a valid remark');
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${API}/api/admin/approvals/provider/${providerId}/${action}?remark=${encodeURIComponent(
+          remark
+        )}`,
         {
-          text: actionLabel,
-          style: type === 'reject' ? 'destructive' : 'default',
-          onPress: async () => {
-            try {
-              const res = await fetch(
-                `${API}/api/admin/providers/${id}/${type}`,
-                {
-                  method: 'PUT',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-
-              if (!res.ok) {
-                throw new Error('Action failed');
-              }
-
-              Alert.alert(
-                'Success',
-                `Provider ${actionLabel.toLowerCase()}d successfully`
-              );
-
-              loadProviders(); // 🔄 refresh list
-            } catch (err) {
-              console.error(err);
-              Alert.alert('Error', 'Action failed. Try again.');
-            }
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        },
-      ]
-    );
+        }
+      );
+
+      if (!res.ok) throw new Error('Action failed');
+
+      Alert.alert('Success', `Provider ${action}d successfully`);
+      loadProviders();
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Action failed. Try again.');
+    }
   };
 
   if (loading) {
@@ -120,9 +109,7 @@ export default function ProvidersScreen() {
       </Text>
 
       {providers.length === 0 && (
-        <Text className="text-gray-400">
-          No providers found
-        </Text>
+        <Text className="text-gray-400">No providers found</Text>
       )}
 
       {providers.map((p) => (
@@ -130,58 +117,64 @@ export default function ProvidersScreen() {
           key={p.id}
           className="bg-white rounded-3xl p-6 mb-4 border border-gray-100"
         >
-          <Text className="text-lg font-black">
-            {p.ownerName}
-          </Text>
-          <Text className="text-gray-400 text-xs">
-            {p.email}
-          </Text>
-          <Text className="text-gray-400 text-xs">
-            {p.phone}
-          </Text>
+          <Text className="text-lg font-black">{p.ownerName}</Text>
+          <Text className="text-gray-400 text-xs">{p.email}</Text>
+          <Text className="text-gray-400 text-xs">{p.phone}</Text>
+
+          {p.verification && (
+            <View className="mt-4 bg-gray-50 p-4 rounded-xl">
+              <Text className="font-bold text-xs uppercase mb-2">
+                Verification Details
+              </Text>
+              <Text className="text-xs">
+                Business: {p.verification.businessName}
+              </Text>
+              <Text className="text-xs">
+                License: {p.verification.licenseNumber}
+              </Text>
+              <Text className="text-xs text-indigo-600">
+                Document: {p.verification.documentUrl}
+              </Text>
+              <Text className="text-xs mt-1">
+                Status: {p.verification.status}
+              </Text>
+            </View>
+          )}
 
           <View className="flex-row gap-3 mt-4">
             {p.status === 'pending' && (
               <>
                 <TouchableOpacity
-                  onPress={() => action(p.id, 'approve')}
+                  onPress={() => handleAction(p.id, 'approve')}
                   className="bg-green-600 px-4 py-2 rounded-xl"
                 >
-                  <Text className="text-white font-bold">
-                    Approve
-                  </Text>
+                  <Text className="text-white font-bold">Approve</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => action(p.id, 'reject')}
+                  onPress={() => handleAction(p.id, 'reject')}
                   className="bg-red-500 px-4 py-2 rounded-xl"
                 >
-                  <Text className="text-white font-bold">
-                    Reject
-                  </Text>
+                  <Text className="text-white font-bold">Reject</Text>
                 </TouchableOpacity>
               </>
             )}
 
             {p.status === 'approved' && (
               <TouchableOpacity
-                onPress={() => action(p.id, 'suspend')}
+                onPress={() => handleAction(p.id, 'suspend')}
                 className="bg-amber-500 px-4 py-2 rounded-xl"
               >
-                <Text className="text-white font-bold">
-                  Suspend
-                </Text>
+                <Text className="text-white font-bold">Suspend</Text>
               </TouchableOpacity>
             )}
 
             {p.status === 'suspended' && (
               <TouchableOpacity
-                onPress={() => action(p.id, 'reactivate')}
+                onPress={() => handleAction(p.id, 'reactivate')}
                 className="bg-indigo-600 px-4 py-2 rounded-xl"
               >
-                <Text className="text-white font-bold">
-                  Reactivate
-                </Text>
+                <Text className="text-white font-bold">Reactivate</Text>
               </TouchableOpacity>
             )}
           </View>

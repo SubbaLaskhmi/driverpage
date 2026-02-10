@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, Href } from "expo-router";
 import {
   Alert,
   FlatList,
@@ -174,7 +174,7 @@ export default function DriverDashboardScreen() {
         <TouchableOpacity
         onPress={() => {
             setActiveTab("bookings");
-            router.push("/(driver)/bookings");
+            router.push("/(driver)/bookings" as Href);
         }}
         className="flex-1 py-3 items-center rounded-xl"
         >
@@ -183,7 +183,7 @@ export default function DriverDashboardScreen() {
 
         {/* PROFILE / SETTINGS */}
         <TouchableOpacity
-        onPress={() => router.push("/(driver)/profile")}
+        onPress={() => router.push("/(driver)/profile" as Href)}
         className="flex-1 py-3 items-center rounded-xl"
         >
         <Ionicons name="settings-outline" size={24} color="#B2BEC3" />

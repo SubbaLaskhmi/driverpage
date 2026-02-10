@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -51,21 +50,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (user != null && jwtService.isTokenValid(jwt, user)) {
 
+                // ✅ ROLE RESOLUTION
                 String role = "ROLE_" + user.getRole().name();
 
-                // ✅ CORRECT PRINCIPAL
-                UserDetails userDetails =
-                        org.springframework.security.core.userdetails.User
-                                .withUsername(user.getEmail())
-                                .password(user.getPassword())
-                                .authorities(new SimpleGrantedAuthority(role))
-                                .build();
+                // 🔥 DEBUG (THIS IS THE IMPORTANT ADDITION)
+                System.out.println("JWT AUTHORITY = " + role);
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,   // ✅ FIXED
+                                user,
                                 null,
-                                userDetails.getAuthorities()
+                                List.of(new SimpleGrantedAuthority(role))
                         );
 
                 authToken.setDetails(

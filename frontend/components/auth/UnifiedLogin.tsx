@@ -1,5 +1,3 @@
-import * as SecureStore from "expo-secure-store";
-
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -16,7 +14,7 @@ import {
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import BASE_URL from '../../constants/api';
 import { Link, type Href } from 'expo-router';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* ================= TYPES ================= */
 
@@ -84,43 +82,71 @@ export default function UnifiedLogin({ role }: UnifiedLoginProps) {
   /* ================= LOGIN HANDLER ================= */
 
   const handleLogin = async () => {
-  setErrorMessage("");
+    setErrorMessage('');
 
-  try {
-    setIsLoading(true);
-
-    console.log("LOGIN URL:", `${BASE_URL}/api/auth/login`);
-
-    const response = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email.trim(),
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      setErrorMessage(data.message || "Invalid credentials");
+    if (!email || !password) {
+      setErrorMessage('Please enter email and password');
       return;
     }
 
-    // ✅ STORE TOKEN
-    await SecureStore.setItemAsync("driverToken", data.token);
-    await SecureStore.setItemAsync("driverRole", data.role);
+    try {
+      setIsLoading(true);
 
-    // ✅ NAVIGATE
-    router.replace("/(driver)/dashboard");
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-  } catch (error) {
-    console.error("LOGIN FETCH ERROR:", error);
-    setErrorMessage("Server error. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+      let data = null;
+
+try {
+  data = await response.json();
+} catch {
+  data = null;
+}
+
+if (!response.ok) {
+  setErrorMessage(data?.message || 'Login failed');
+  return;
+}
+
+
+      if (!response.ok) {
+        setErrorMessage(data.message || 'Invalid credentials');
+        return;
+      }
+
+      /* ================= CRITICAL FIX ================= */
+
+      // ✅ Store token EXACTLY as backend expects
+      localStorage.setItem('token', data.token);
+localStorage.setItem('role', data.role);
+
+// ALSO store for React Native compatibility
+await AsyncStorage.setItem('token', data.token);
+await AsyncStorage.setItem('role', data.role);
+
+
+      // ❗ Prevent non-admin accessing admin
+      if (role === 'ADMIN' && data.role !== 'ADMIN') {
+        setErrorMessage('Access denied: Not an admin account');
+        return;
+      }
+
+      setEmail('');
+      setPassword('');
+
+      // ✅ Replace prevents back navigation to login
+      router.replace(current.dashboard as Href);
+
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   /* ================= UI ================= */
 

@@ -58,7 +58,7 @@ public class AdminProviderService {
 
         provider.setApproved(true);
         provider.setEnabled(true);
-        provider.setVerificationStatus(VerificationStatus.APPROVED);
+        provider.setVerificationStatus(VerificationStatus.VERIFIED);
         userRepository.save(provider);
 
         createNotification(
@@ -74,7 +74,7 @@ public class AdminProviderService {
         User provider = getProvider(id);
 
         provider.setEnabled(false);
-        provider.setVerificationStatus(VerificationStatus.SUSPENDED);
+        provider.setVerificationStatus(VerificationStatus.PENDING);
         userRepository.save(provider);
 
         createNotification(
@@ -90,7 +90,7 @@ public class AdminProviderService {
         User provider = getProvider(id);
 
         provider.setEnabled(true);
-        provider.setVerificationStatus(VerificationStatus.APPROVED);
+        provider.setVerificationStatus(VerificationStatus.VERIFIED);
         userRepository.save(provider);
 
         createNotification(

@@ -1,6 +1,6 @@
-import UnifiedLogin from "@/components/auth/UnifiedLogin";
-import React from "react";
+import UnifiedLogin from '@/components/auth/UnifiedLogin';
+import React from 'react';
 
 export default function DriverLoginScreen() {
-  return <UnifiedLogin role="DRIVER" />;
+    return <UnifiedLogin role="DRIVER" />;
 }

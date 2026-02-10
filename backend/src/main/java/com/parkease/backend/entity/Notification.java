@@ -18,6 +18,10 @@ public class Notification {
     @Column(nullable = false)
     private String targetRole;
 
+    
+    // Nullable → used for provider-specific notifications
+    private Long targetUserId;
+
     @Column(nullable = false)
     private boolean isRead = false;
 
@@ -55,9 +59,13 @@ public class Notification {
     public boolean isRead() {
         return isRead;
     }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    
+
      public void setMessage(String message) {
         this.message = message;
     }
@@ -68,6 +76,14 @@ public class Notification {
 
     public void setRead(boolean read) {
         this.isRead = read;
+    }
+
+    public Long getTargetUserId() {
+        return targetUserId;
+    }
+
+    public void setTargetUserId(Long targetUserId) {
+        this.targetUserId = targetUserId;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

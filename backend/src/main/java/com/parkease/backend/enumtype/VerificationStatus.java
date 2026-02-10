@@ -2,7 +2,7 @@ package com.parkease.backend.enumtype;
 
 public enum VerificationStatus {
     PENDING,
-    APPROVED,
+   VERIFIED,
     REJECTED,
-    SUSPENDED
+ 
 }
