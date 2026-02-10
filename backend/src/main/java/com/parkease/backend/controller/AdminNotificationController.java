@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/notifications")
+@RequestMapping("/api/system/admin/notifications") // ✅ CHANGED
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminNotificationController {
 

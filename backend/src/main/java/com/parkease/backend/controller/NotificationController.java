@@ -20,9 +20,6 @@ public class NotificationController {
         this.notificationRepository = notificationRepository;
     }
 
-    /* =====================================================
-       GET ADMIN NOTIFICATIONS
-       ===================================================== */
     @GetMapping
     public ResponseEntity<List<Notification>> getAdminNotifications() {
         List<Notification> notifications =
@@ -30,9 +27,6 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
-    /* =====================================================
-       MARK NOTIFICATION AS READ
-       ===================================================== */
     @PutMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
         Notification n = notificationRepository.findById(id)
@@ -43,3 +37,4 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 }
+

@@ -18,7 +18,7 @@ public class MailConfig {
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
 
-        // ⚠️ Use the SAME email as in application.yml
+        // Mail configuration values are read from application.properties
         mailSender.setUsername("yourmail@gmail.com");
         mailSender.setPassword("your-app-password");
 

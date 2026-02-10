@@ -11,38 +11,36 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { fetchNearbyParking } from "../../services/driverParkingApi";
-
-/* ================= TYPES ================= */
-interface ParkingSlot {
-  id: string;
-  parkingName: string;
-  location: string;
-  pricePerHour: number;
-  available: boolean;
-  distance: string;
-  rating: number;
-}
+import {
+  fetchNearbyParking,
+  DriverParkingSpot,
+} from "../../services/driverParkingApi";
 
 /* ================= SCREEN ================= */
 export default function DriverDashboardScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"available" | "bookings">(
-    "available"
-  );
 
-  const [parkingSlots, setParkingSlots] = useState<ParkingSlot[]>([]);
+  const [parkingSlots, setParkingSlots] = useState<DriverParkingSpot[]>([]);
   const [loading, setLoading] = useState(true);
 
   /* ================= FETCH DATA ================= */
   useEffect(() => {
     const loadParking = async () => {
       try {
-        const token = "PASTE_DRIVER_JWT_TOKEN_HERE";
+        const token = await AsyncStorage.getItem("token");
+
+        if (!token) {
+          Alert.alert("Session expired", "Please login again", [
+            { text: "OK", onPress: () => router.replace("/(driver)") },
+          ]);
+          return;
+        }
+
         const data = await fetchNearbyParking(token);
         setParkingSlots(data);
-      } catch (err) {
+      } catch {
         Alert.alert("Error", "Failed to load parking spots");
       } finally {
         setLoading(false);
@@ -50,7 +48,7 @@ export default function DriverDashboardScreen() {
     };
 
     loadParking();
-  }, []);
+  }, [router]);
 
   /* ================= HEADER ================= */
   const renderHeader = () => (
@@ -74,7 +72,10 @@ export default function DriverDashboardScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.replace("/(driver)")}
+          onPress={async () => {
+            await AsyncStorage.multiRemove(["token", "role"]);
+            router.replace("/(driver)");
+          }}
           className="w-10 h-10 bg-white/20 rounded-full justify-center items-center"
         >
           <Ionicons name="log-out-outline" size={22} color="white" />
@@ -84,7 +85,13 @@ export default function DriverDashboardScreen() {
   );
 
   /* ================= SLOT CARD ================= */
-  const renderSlotItem = ({ item, index }: any) => (
+  const renderSlotItem = ({
+    item,
+    index,
+  }: {
+    item: DriverParkingSpot;
+    index: number;
+  }) => (
     <Animated.View entering={FadeInDown.delay(index * 100)}>
       <TouchableOpacity
         activeOpacity={0.9}
@@ -99,6 +106,9 @@ export default function DriverDashboardScreen() {
               <Ionicons name="location" size={12} color="#636E72" />
               <Text className="text-xs text-gray-500">{item.location}</Text>
             </View>
+            <Text className="text-[11px] text-gray-400 mt-1">
+              Spot #{item.slotId}
+            </Text>
           </View>
 
           <View
@@ -155,7 +165,7 @@ export default function DriverDashboardScreen() {
         <FlatList
           data={parkingSlots}
           renderItem={renderSlotItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.slotId)}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
         />
@@ -163,32 +173,23 @@ export default function DriverDashboardScreen() {
 
       {/* ================= BOTTOM NAV ================= */}
       <View className="absolute bottom-8 left-6 right-6 bg-white rounded-2xl p-2 flex-row">
-        <TouchableOpacity
-          onPress={() => setActiveTab("available")}
-          className="flex-1 items-center"
-        >
+        <TouchableOpacity className="flex-1 items-center">
           <Ionicons name="map" size={24} color="#00B894" />
         </TouchableOpacity>
 
-        {/* BOOKINGS */}
         <TouchableOpacity
-        onPress={() => {
-            setActiveTab("bookings");
-            router.push("/(driver)/bookings" as Href);
-        }}
-        className="flex-1 py-3 items-center rounded-xl"
+          onPress={() => router.push("/(driver)/bookings" as Href)}
+          className="flex-1 py-3 items-center"
         >
-        <Ionicons name="ticket" size={24} color="#B2BEC3" />
+          <Ionicons name="ticket" size={24} color="#B2BEC3" />
         </TouchableOpacity>
 
-        {/* PROFILE / SETTINGS */}
         <TouchableOpacity
-        onPress={() => router.push("/(driver)/profile" as Href)}
-        className="flex-1 py-3 items-center rounded-xl"
+          onPress={() => router.push("/(driver)/profile" as Href)}
+          className="flex-1 py-3 items-center"
         >
-        <Ionicons name="settings-outline" size={24} color="#B2BEC3" />
+          <Ionicons name="settings-outline" size={24} color="#B2BEC3" />
         </TouchableOpacity>
-
       </View>
     </View>
   );

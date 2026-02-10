@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   fetchDriverProfile,
@@ -22,10 +22,11 @@ export default function DriverProfileScreen() {
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* ================= FETCH PROFILE ================= */
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const token = await SecureStore.getItemAsync("driverToken");
+        const token = await AsyncStorage.getItem("token");
 
         if (!token) {
           throw new Error("No token");
@@ -33,19 +34,17 @@ export default function DriverProfileScreen() {
 
         const data = await fetchDriverProfile(token);
         setProfile(data);
-      } catch (err) {
-        Alert.alert(
-          "Session expired",
-          "Please login again",
-          [{ text: "OK", onPress: () => router.replace("/(driver)") }]
-        );
+      } catch {
+        Alert.alert("Session expired", "Please login again", [
+          { text: "OK", onPress: () => router.replace("/(driver)") },
+        ]);
       } finally {
         setLoading(false);
       }
     };
 
     loadProfile();
-  }, []);
+  }, [router]);
 
   if (loading) {
     return (
@@ -95,7 +94,7 @@ export default function DriverProfileScreen() {
       <TouchableOpacity
         className="flex-row items-center px-4 py-4"
         onPress={async () => {
-          await SecureStore.deleteItemAsync("driverToken");
+          await AsyncStorage.multiRemove(["token", "role"]);
           router.replace("/(driver)");
         }}
       >

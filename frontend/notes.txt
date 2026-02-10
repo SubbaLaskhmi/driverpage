@@ -1,5 +1,5 @@
 authentication module
-2. slot mapping 
+slot mapping 
 booking and timer module
 payment simulation
 admin dashboard
@@ -15,6 +15,6 @@ base class is same and role will be changed
 
 beckend :-
 
-admin pannel
-driver pannel
-parking provide
+admin panel
+driver panel
+parking provider

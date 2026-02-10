@@ -1,16 +1,36 @@
 import BASE_URL from "../constants/api";
 
-export async function fetchNearbyParking(token: string) {
-  const response = await fetch(`${BASE_URL}/api/driver/parking/nearby`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+/* ================= TYPES ================= */
+
+// 🔹 This MUST match backend response fields
+export interface DriverParkingSpot {
+  slotId: number;
+  parkingName: string;
+  location: string;
+  pricePerHour: number;
+  available: boolean;
+  distance: string;
+  rating: number;
+}
+
+/* ================= API ================= */
+
+export async function fetchNearbyParking(
+  token: string
+): Promise<DriverParkingSpot[]> {
+  const response = await fetch(
+    `${BASE_URL}/api/driver/parking/nearby`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch parking spots");
+    throw new Error("Failed to fetch nearby parking");
   }
 
   return response.json();
